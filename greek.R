@@ -4,7 +4,9 @@ library(ggrepel)
 library(dplyr)
 library(showtext)
 
-file_list <-  c('aeschylus','aretaeus','tryphiodorus','demosthenes')
+file_list <-  c('aeschylus','aretaeus','tryphiodorus','demosthenes',
+                'aeschines','aristotle','septuaginta','plato','plutarch',
+                'julian','matthew')
 
 greek <- data.frame()
 
@@ -36,7 +38,10 @@ new_greek <- greek |>
     word=first(entry),
     POS=first(POS)
   ) |> 
-  mutate(freq_rank = rank(-count,ties.method="min"))
+  mutate(freq_rank = rank(-count,ties.method="min")) |> 
+  arrange(-count) |> 
+  mutate(cum_sum = cumsum(count)) |> 
+  mutate(cum_pct = 100*cum_sum/sum(count))
 
 new_greek |> 
   ggplot()+
@@ -45,20 +50,47 @@ new_greek |>
   scale_color_identity()+
   labs(
     title="Zipf's law in Ancient Greek",
-    subtitle = ""
+    subtitle = "Log/Log | Fitted: y ~ 1/x",
+    caption="Nikhil Chinchalkar | Arkeo 2812"
   )+
-  ylab("Frequency")+
-  xlab("Rank")+
+  ylab("Word Frequency")+
+  xlab("Word Rank")+
   
-  scale_x_continuous(transform = "log10",n.breaks=6)+
-  scale_y_continuous(transform = "log10",n.breaks=6)+
+  scale_x_continuous(transform = "log10",labels = scales::label_comma(),n.breaks=10)+
+  scale_y_continuous(transform = "log10",labels = scales::label_comma(),n.breaks=10)+
   
   theme_set(theme_gray(base_size = 20, base_family = "EB Garamond" ))+
   theme(plot.title = element_text(size = 30, hjust =0, face = "bold",color="black"), 
         plot.subtitle = element_text(size = 22, hjust =0, color="black"))+
-  guides(color = guide_legend(title.position = "top", 
-                              title.hjust = 0.5,
-                              label.position = "bottom"))+
+  theme(legend.title = element_text( size=9), legend.text=element_text(size=9))+
+  theme(panel.background = element_rect(fill="white", color="white"))+
+  theme(panel.grid.major = element_line(color="#e3e3e3"))+
+  theme(legend.background = element_rect(fill="white", color="white"))+
+  theme(axis.ticks.x = element_line(colour="#e3e3e3"))+
+  theme(axis.ticks.y = element_line(colour="#e3e3e3"))+
+  theme(legend.box.background = element_rect(fill="white", color="white"))+
+  
+  geom_abline(slope=-1, intercept=log(10516, 10), color='blue')
+
+new_greek |> 
+  ggplot()+
+  geom_point(aes(x=freq_rank, y=count),color="black",shape=20,size=4)+
+  
+  scale_color_identity()+
+  labs(
+    title="Zipf's law in Ancient Greek",
+    subtitle = "Linear/Linear",
+    caption="Nikhil Chinchalkar | Arkeo 2812"
+  )+
+  ylab("Word Frequency")+
+  xlab("Word Rank")+
+  
+  scale_x_continuous(labels = scales::label_comma(),n.breaks=10)+
+  scale_y_continuous(labels = scales::label_comma(),n.breaks=10)+
+  
+  theme_set(theme_gray(base_size = 20, base_family = "EB Garamond" ))+
+  theme(plot.title = element_text(size = 30, hjust =0, face = "bold",color="black"), 
+        plot.subtitle = element_text(size = 22, hjust =0, color="black"))+
   theme(legend.title = element_text( size=9), legend.text=element_text(size=9))+
   theme(panel.background = element_rect(fill="white", color="white"))+
   theme(panel.grid.major = element_line(color="#e3e3e3"))+
